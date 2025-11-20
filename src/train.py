@@ -61,11 +61,11 @@ def main():
     }
     
     # Save directories
-    models_dir = Path("../models")
+    models_dir = Path("./models")
     models_dir.mkdir(parents=True, exist_ok=True)
-    cm_dir = Path("../outputs/confusion_matrices")
+    cm_dir = Path("./outputs/confusion_matrices")
     cm_dir.mkdir(parents=True, exist_ok=True)
-    roc_dir = Path("../outputs/roc_curves")
+    roc_dir = Path("./outputs/roc_curves")
     roc_dir.mkdir(parents=True, exist_ok=True)
     
     # Train and evaluate

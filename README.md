@@ -9,6 +9,21 @@ This project trains a machine learning model to classify breast cancer data.
 
 ---
 
+## Docker Image
+
+The project is also available as a Docker image on Docker Hub:
+
+[![Docker Pulls](https://img.shields.io/docker/pulls/fairfriend92/breast_cancer_ml)](https://hub.docker.com/r/fairfriend92/breast_cancer_ml)
+
+Pull the image and run:
+
+```powershell
+docker pull fairfriend92/breast_cancer_ml:latest
+docker run --rm -v ${PWD}/models:/breast_cancer_ml_app/models fairfriend92/breast_cancer_ml:latest
+```
+
+---
+
 ## Using a Python virtual environment (venv)
 
 ### Create and activate venv

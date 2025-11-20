@@ -3,10 +3,13 @@ from pathlib import Path
 import joblib 
 from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
-from sklearn.pipeline import make_pipeline
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import classification_report, accuracy_score
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.metrics import (classification_report, 
+                             accuracy_score, f1_score, roc_auc_score)
 
 def main():
     print("Starting training...")
@@ -36,28 +39,51 @@ def main():
         random_state=42         # Fixed seed to reproduce results
     )
 
-    # Pipeline with StandardScaler + LogisticRegression
-    pipe = make_pipeline(
-        StandardScaler(), # Scale features so that they all have mu=0 std=1
-        LogisticRegression(max_iter=1000, random_state=42)
-    )
+    # Dictionary containing model definitions inside pipelines
+    pipelines = {
+        "LogisticRegression": Pipeline([
+            ("scaler", StandardScaler()),
+            ("clf", LogisticRegression(max_iter=1000, random_state=42))
+        ]),
+        "RandomForest": Pipeline([
+            ("clf", RandomForestClassifier(n_estimators=100, random_state=42))
+        ]),
+        "SVM": Pipeline([
+            ("scaler", StandardScaler()),
+            ("clf", SVC(probability=True, random_state=42))
+        ])
+    }
+    
+    # Train and evaluate
+    for name, pipe in pipelines.items():
+        pipe.fit(X_train, y_train)    
 
-    # Train
-    pipe.fit(X_train, y_train)
+        y_pred = pipe.predict(X_test)        
+        acc = accuracy_score(y_test, y_pred)         
+        '''
+            F1-score = 2 * (TP_precision*TP_recall)/(TP_precision+TP_recall)
+            TP_precision: TP/(TP+FP)  
+            TP_recall: TP/(TP+FN)
+            TP: true positive FP: false positive FN: false negative 
+        '''        
+        f1 = f1_score(y_test, y_pred)
+        
+        # Get prediction probabilities only for class 1 (malignant)
+        y_prob = pipe.predict_proba(X_test)[:, 1]   
+        auc = roc_auc_score(y_test, y_prob)
+        
+        print(f"{name} - Accuracy: {acc:.4f}, F1-score: {f1:.4f}, AUC: {auc:.4f}")
+        print("\nClassification Report:")
+        print(classification_report(y_test, y_pred, target_names=data.target_names))
 
-    # Evaluate
-    preds = pipe.predict(X_test)
-    acc = accuracy_score(y_test, preds)
-    print(f"Test accuracy: {acc:.4f}")
-    print("Classification report:")
-    print(classification_report(y_test, preds, target_names=data.target_names))
 
     # Save model
     models_dir = Path("../models")
     models_dir.mkdir(parents=True, exist_ok=True)
-    model_path = models_dir / "logreg_breast_cancer.joblib"
-    joblib.dump(pipe, model_path)
-    print(f"Saved trained model to: {model_path.resolve()}")
+    for name, pipe in pipelines.items():
+        model_path = models_dir / f"{name}.joblib"
+        joblib.dump(pipe, model_path)
+        print(f"Saved trained model to: {model_path.resolve()}")
 
 if __name__ == "__main__":
     main()

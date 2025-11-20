@@ -8,10 +8,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import (classification_report, confusion_matrix,
-                             accuracy_score, f1_score, roc_auc_score)
+                             accuracy_score, f1_score, auc, roc_auc_score, roc_curve)
 
 def main():
     print("Starting training...")
@@ -40,27 +40,33 @@ def main():
         stratify=y,             # Same malignant/benign ratio in test and train
         random_state=42         # Fixed seed to reproduce results
     )
+    
+    # Base models
+    lr = LogisticRegression(max_iter=1000)
+    rf = RandomForestClassifier(n_estimators=100, random_state=42)
+    svc = SVC(probability=True, random_state=42)
+    
+    # Voting ensemble
+    voting = VotingClassifier(
+        estimators=[('lr', lr), ('rf', rf), ('svc', svc)],
+        voting='soft'  # soft = use probabilities to choose among predictions
+    )
 
     # Dictionary containing model definitions inside pipelines
     pipelines = {
-        "LogisticRegression": Pipeline([
-            ("scaler", StandardScaler()),
-            ("clf", LogisticRegression(max_iter=1000, random_state=42))
-        ]),
-        "RandomForest": Pipeline([
-            ("clf", RandomForestClassifier(n_estimators=100, random_state=42))
-        ]),
-        "SVM": Pipeline([
-            ("scaler", StandardScaler()),
-            ("clf", SVC(probability=True, random_state=42))
-        ])
+        "LogisticRegression": Pipeline([("scaler", StandardScaler()), ("clf", lr)]),
+        "RandomForest": Pipeline([("clf", rf)]), 
+        "SVM": Pipeline([("scaler", StandardScaler()),("clf", svc)]), 
+        "Voting": Pipeline([('scaler', StandardScaler()), ('clf', voting)])        
     }
     
     # Save directories
     models_dir = Path("../models")
     models_dir.mkdir(parents=True, exist_ok=True)
-    output_dir = Path("../outputs/confusion_matrices")
-    output_dir.mkdir(parents=True, exist_ok=True)
+    cm_dir = Path("../outputs/confusion_matrices")
+    cm_dir.mkdir(parents=True, exist_ok=True)
+    roc_dir = Path("../outputs/roc_curves")
+    roc_dir.mkdir(parents=True, exist_ok=True)
     
     # Train and evaluate
     for name, pipe in pipelines.items():
@@ -90,9 +96,9 @@ def main():
             
             AUC: Area Under the Curve. The greater the area, the better the classifier.            
         '''
-        auc = roc_auc_score(y_test, y_prob)
+        auc_score = roc_auc_score(y_test, y_prob)
         
-        print(f"{name} - Accuracy: {acc:.4f}, F1-score: {f1:.4f}, AUC: {auc:.4f}")
+        print(f"\n{name} - Accuracy: {acc:.4f}, F1-score: {f1:.4f}, AUC: {auc_score:.4f}")
         print("\nClassification Report:")
         print(classification_report(y_test, y_pred, target_names=data.target_names))
         
@@ -102,13 +108,29 @@ def main():
         print(f"Saved trained model to: {model_path.resolve()}")
         
         # Plot and save confusion matrices 
-        output_path = output_dir / f"{name}_confusion_matrix.png"
+        cm_path = cm_dir / f"{name}_cm.png"
         sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
         plt.title("Confusion Matrix")
         plt.xlabel("Predicted")
         plt.ylabel("Actual")
-        plt.savefig(output_path)
+        plt.savefig(cm_path)
         plt.close()
+        print(f"Saved confusion matrix to: {cm_path.resolve()}")
+
+    # Compare ROC curves 
+    plt.figure(figsize=(6,5))
+    for name, pipe in pipelines.items():
+        y_prob = pipe.predict_proba(X_test)[:,1]
+        fpr, tpr, _ = roc_curve(y_test, y_prob)
+        roc_auc = auc(fpr, tpr)
+        plt.plot(fpr, tpr, label=f"{name} (AUC={roc_auc:.3f})")
+    plt.plot([0,1],[0,1],'k--')
+    plt.xlabel("False Positive Rate")
+    plt.ylabel("True Positive Rate")
+    plt.title("ROC Curve Comparison")
+    plt.legend()
+    plt.savefig(roc_dir / "roc_curve_all_models.png")
+    plt.close()
 
 if __name__ == "__main__":
     main()

@@ -19,6 +19,7 @@ The project includes:
 
 ## Project Structure
 
+```
 breast_cancer_ml/
 |
 |__ src/
@@ -31,7 +32,7 @@ breast_cancer_ml/
 |
 |__ requirements.txt
 |__ Dockerfile
-
+```
 ---
 
 ## Requirements

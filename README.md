@@ -64,7 +64,11 @@ docker build -t breast_cancer_ml .
 ### Run the container
 
 ```powershell
-docker run --rm -v ${PWD}/models:/breast_cancer_ml_app/models breast_cancer_ml
+docker run --rm `
+    -v ${PWD}/models:/breast_cancer_ml_app/models `
+    -v ${PWD}/outputs:/breast_cancer_ml_app/outputs `
+    breast_cancer_ml
+
 ```
 
 > Notes:  

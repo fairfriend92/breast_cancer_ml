@@ -15,5 +15,8 @@ COPY src/ ./src/
 # Create folder for models 
 RUN mkdir /breast_cancer_ml_app/models
 
+# Create folder for outputs
+RUN mkdir /breast_cancer_ml_app/outputs
+
 # Default comand when container starts
 CMD ["python", "src/train.py"]

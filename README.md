@@ -20,17 +20,17 @@ The project includes:
 ## Project Structure
 
 breast_cancer_ml/
-│
-├── src/
-│   └── train.py
-│
-├── models/
-├── outputs/
-│   ├── confusion_matrices/
-│   └── roc_curves/
-│
-├── requirements.txt
-└── Dockerfile
+|
+|__ src/
+|   |__ train.py
+|
+|__ models/
+|__ outputs/
+|   |__ confusion_matrices/
+|   |__ roc_curves/
+|
+|__ requirements.txt
+|__ Dockerfile
 
 ---
 
